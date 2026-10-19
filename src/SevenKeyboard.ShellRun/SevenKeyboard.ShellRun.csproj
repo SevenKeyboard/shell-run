@@ -6,14 +6,22 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <PlatformTarget>x64</PlatformTarget>
+    <ShellRunBuildNative Condition="'$(ShellRunBuildNative)' == ''">false</ShellRunBuildNative>
+    <ShellRunNativePath>native/win-x64/ShellRun.Native.dll</ShellRunNativePath>
+    <ShellRunNativePath Condition="'$(ShellRunBuildNative)' == 'true'">native/bin/$(Configuration)/ShellRun.Native.dll</ShellRunNativePath>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="native/bin/$(Configuration)/ShellRun.Native.dll" Link="ShellRun.Native.dll"
-          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Remove="$(ShellRunNativePath)" />
+    <!-- Switching between prebuilt and source-built DLLs must also replace a newer output. -->
+    <None Include="$(ShellRunNativePath)" Link="ShellRun.Native.dll"
+          CopyToOutputDirectory="IfDifferent" CopyToPublishDirectory="IfDifferent" />
   </ItemGroup>
-  <Target Name="BuildShellRunNative" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="PrepareShellRunNative" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
     <Error Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'win-x64'"
            Text="ShellRun currently supports win-x64 only." />
-    <Exec Command="&quot;$(MSBuildProjectDirectory)/native/build.cmd&quot; $(Configuration)" />
+    <Exec Condition="'$(ShellRunBuildNative)' == 'true'"
+          Command="&quot;$(MSBuildProjectDirectory)/native/build.cmd&quot; $(Configuration)" />
+    <Error Condition="!Exists('$(ShellRunNativePath)')"
+           Text="ShellRun native DLL is missing. Restore the included native/win-x64 DLL or build with -p:ShellRunBuildNative=true." />
   </Target>
 </Project>
